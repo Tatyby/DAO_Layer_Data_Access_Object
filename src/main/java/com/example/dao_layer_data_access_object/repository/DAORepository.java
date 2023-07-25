@@ -1,28 +1,25 @@
 package com.example.dao_layer_data_access_object.repository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Repository
 public class DAORepository {
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    @PersistenceContext
+    EntityManager entityManager;
     private final String scriptFileName = "myScript.sql";
-    private final Map<String, Object> map = new HashMap<>();
+    String myScript = read(scriptFileName);
 
-
-    public DAORepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
-    }
 
     private static String read(String scriptFileName) {
         try (InputStream is = new ClassPathResource(scriptFileName).getInputStream();
@@ -32,12 +29,10 @@ public class DAORepository {
             throw new RuntimeException(e);
         }
     }
-
     public List<String> getProductName(String namePerson) {
-        map.put("name", namePerson);
-        List<String> customers = namedParameterJdbcTemplate.queryForList(
-                read(scriptFileName), map, String.class);
-        return customers;
+        Query query = entityManager.createNativeQuery(myScript);
+        query.setParameter(1, namePerson);
+        return query.getResultList();
     }
 
 }
